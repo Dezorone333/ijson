@@ -7,7 +7,7 @@ from ijson import common
 
 from .test_base import warning_catcher
 from tests.test_base import JSON, JSON_EVENTS, JSON_PARSE_EVENTS, JSON_OBJECT,\
-    generate_backend_specific_tests, JSON_KVITEMS
+    JSON_KVITEMS
 
 
 class TestMisc:
@@ -26,7 +26,8 @@ class TestMisc:
         importlib.util.module_from_spec(spec)
 
 
-class MainEntryPoints:
+class TestMainEntryPoints:
+    """Tests that main API entry points work against different types of inputs automatically"""
 
     def _assert_invalid_type(self, routine, *args, **kwargs):
         # Functions are not valid inputs
@@ -78,16 +79,14 @@ class MainEntryPoints:
         if previous_routine:
             self._assert_events(expected_results, previous_routine, routine, *args, **kwargs)
 
-    def test_rich_basic_parse(self):
-        self._assert_entry_point(JSON_EVENTS, None, self.basic_parse)
+    def test_rich_basic_parse(self, backend):
+        self._assert_entry_point(JSON_EVENTS, None, backend.basic_parse)
 
-    def test_rich_parse(self):
-        self._assert_entry_point(JSON_PARSE_EVENTS, self.basic_parse, self.parse)
+    def test_rich_parse(self, backend):
+        self._assert_entry_point(JSON_PARSE_EVENTS, backend.basic_parse, backend.parse)
 
-    def test_rich_items(self):
-        self._assert_entry_point([JSON_OBJECT], self.parse, self.items, '')
+    def test_rich_items(self, backend):
+        self._assert_entry_point([JSON_OBJECT], backend.parse, backend.items, '')
 
-    def test_rich_kvitems(self):
-        self._assert_entry_point(JSON_KVITEMS, self.parse, self.kvitems, 'docs.item')
-
-generate_backend_specific_tests(globals(), 'MainEntryPoints', '', MainEntryPoints)
+    def test_rich_kvitems(self, backend):
+        self._assert_entry_point(JSON_KVITEMS, backend.parse, backend.kvitems, 'docs.item')

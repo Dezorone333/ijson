@@ -395,9 +395,9 @@ class IJsonTestsBase:
         assert expected_items == self.get_all(self.items, json, prefix)
 
     def test_map_type(self):
-        obj = self.get_first(self.items, JSON, '')
+        obj = self.get_all(self.items, JSON, '')[0]
         assert isinstance(obj, dict)
-        obj = self.get_first(self.items, JSON, '', map_type=collections.OrderedDict)
+        obj = self.get_all(self.items, JSON, '', map_type=collections.OrderedDict)[0]
         assert isinstance(obj, collections.OrderedDict)
 
     def test_kvitems(self):
@@ -459,7 +459,7 @@ class IJsonTestsBase:
         assert ('map_key', 'special\t') in events
 
     def test_surrogate_pairs(self):
-        event = self.get_first(self.basic_parse, SURROGATE_PAIRS_JSON)
+        event = self.get_all(self.basic_parse, SURROGATE_PAIRS_JSON)[0]
         parsed_string = event[1]
         assert '💩' == parsed_string
 
@@ -627,7 +627,6 @@ def generate_test_cases(module, classname, method_suffix, *bases):
         _bases = bases + (IJsonTestsBase,)
         members = lambda name: {
             'get_all': lambda self, *args, **kwargs: module['get_all'](*args, **kwargs),
-            'get_first': lambda self, *args, **kwargs: module['get_first'](*args, **kwargs),
         }
         return generate_backend_specific_tests(module, classname, method_suffix,
                                                members=members, *_bases)

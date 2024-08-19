@@ -145,8 +145,4 @@ def get_all(routine, json_content, *args, **kwargs):
     return list(routine(_reader(json_content), *args, **kwargs))
 
 
-def get_first(routine, json_content, *args, **kwargs):
-    return next(routine(_reader(json_content), *args, **kwargs))
-
-
 generate_test_cases(globals(), 'Generators', '_gen', GeneratorSpecificTests)

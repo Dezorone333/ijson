@@ -1,7 +1,7 @@
 import asyncio
 import io
 
-from ._test_async_common import _get_all, _get_first
+from ._test_async_common import _get_all
 from .test_base import FileBasedTests, generate_test_cases
 
 
@@ -17,7 +17,6 @@ class AsyncReader:
         return self.data.read(n)
 
 get_all = _get_all(AsyncReader)
-get_first = _get_first(AsyncReader)
 
 # Generating real TestCase classes for each importable backend
 generate_test_cases(globals(), 'Async', '_async', FileBasedTests)

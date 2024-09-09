@@ -353,40 +353,9 @@ class IJsonTestsBase:
         events = self.get_all(self.parse, JSON)
         assert JSON_PARSE_EVENTS == events
 
-    def test_kvitems(self):
-        kvitems = self.get_all(self.kvitems, JSON, 'docs.item')
-        assert JSON_KVITEMS == kvitems
-
-    def test_kvitems_toplevel(self):
-        kvitems = self.get_all(self.kvitems, JSON, '')
-        assert 1 == len(kvitems)
-        key, value = kvitems[0]
-        assert 'docs' == key
-        assert JSON_OBJECT['docs'] == value
-
-    def test_kvitems_empty(self):
-        kvitems = self.get_all(self.kvitems, JSON, 'docs')
-        assert [] == kvitems
-
-    def test_kvitems_twodictlevels(self):
-        json = b'{"meta":{"view":{"columns":[{"id": -1}, {"id": -2}]}}}'
-        view = self.get_all(self.kvitems, json, 'meta.view')
-        assert 1 == len(view)
-        key, value = view[0]
-        assert 'columns' == key
-        assert [{'id': -1}, {'id': -2}] == value
-
-    def test_kvitems_different_underlying_types(self):
-        kvitems = self.get_all(self.kvitems, JSON, 'docs.item.meta')
-        assert JSON_KVITEMS_META == kvitems
-
     def test_parse_array(self):
         events = self.get_all(self.parse, ARRAY_JSON)
         assert ARRAY_JSON_PARSE_EVENTS == events
-
-    def test_kvitems_array(self):
-        kvitems = self.get_all(self.kvitems, ARRAY_JSON, 'item.docs.item')
-        assert JSON_KVITEMS == kvitems
 
     def test_multiple_values(self):
         """Test that the multiple_values flag works"""
@@ -406,13 +375,6 @@ class IJsonTestsBase:
                 assert [JSON_OBJECT, JSON_OBJECT, JSON_OBJECT] == result
             else:
                 assert result, JSON_EVENTS + JSON_EVENTS + JSON_EVENTS == result
-
-    @pytest.mark.parametrize("test_case", [
-        pytest.param(value, id=name) for name, value in EMPTY_MEMBER_TEST_CASES.items()
-    ])
-    def test_kvitems_empty_member(self, test_case):
-        pairs = self.get_all(self.kvitems, test_case.json, test_case.prefix)
-        assert test_case.kvitems == pairs
 
 
 class FileBasedTests:

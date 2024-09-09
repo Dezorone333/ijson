@@ -4,13 +4,11 @@ import pytest
 from .test_base import ARRAY_JSON, ARRAY_JSON_OBJECT, EMPTY_MEMBER_TEST_CASES, JSON, JSON_OBJECT
 
 def test_items(adaptor):
-    events = adaptor.items(JSON, '')
-    assert [JSON_OBJECT] == events
+    assert [JSON_OBJECT] == adaptor.items(JSON, '')
 
 
 def test_items_array(adaptor):
-    events = adaptor.items(ARRAY_JSON, '')
-    assert [ARRAY_JSON_OBJECT] == events
+    assert [ARRAY_JSON_OBJECT] == adaptor.items(ARRAY_JSON, '')
 
 
 def test_items_twodictlevels(adaptor):
@@ -46,5 +44,4 @@ def test_map_type(adaptor):
     pytest.param(value, id=name) for name, value in EMPTY_MEMBER_TEST_CASES.items()
 ])
 def test_items_empty_member(adaptor, test_case):
-    objects = adaptor.items(test_case.json, test_case.prefix)
-    assert test_case.items == objects
+    assert test_case.items == adaptor.items(test_case.json, test_case.prefix)

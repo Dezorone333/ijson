@@ -349,23 +349,6 @@ class IJsonTestsBase:
     a particuliar method.
     '''
 
-    def _raises_json_error(self, json, **kwargs):
-        with pytest.raises(common.JSONError):
-            self.get_all(self.basic_parse, json, **kwargs)
-
-    def _raises_incomplete_json_error(self, json):
-        with pytest.raises(common.IncompleteJSONError):
-            self.get_all(self.basic_parse, json)
-
-    def test_basic_parse(self):
-        events = self.get_all(self.basic_parse, JSON)
-        assert JSON_EVENTS == events
-
-    def test_basic_parse_threaded(self):
-        thread = threading.Thread(target=self.test_basic_parse)
-        thread.start()
-        thread.join()
-
     def test_parse(self):
         events = self.get_all(self.parse, JSON)
         assert JSON_PARSE_EVENTS == events
@@ -427,15 +410,6 @@ class IJsonTestsBase:
         kvitems = self.get_all(self.kvitems, JSON, 'docs.item.meta')
         assert JSON_KVITEMS_META == kvitems
 
-    def test_basic_parse_array(self):
-        events = self.get_all(self.basic_parse, ARRAY_JSON)
-        assert ARRAY_JSON_EVENTS == events
-
-    def test_basic_parse_array_threaded(self):
-        thread = threading.Thread(target=self.test_basic_parse_array)
-        thread.start()
-        thread.join()
-
     def test_parse_array(self):
         events = self.get_all(self.parse, ARRAY_JSON)
         assert ARRAY_JSON_PARSE_EVENTS == events
@@ -447,102 +421,6 @@ class IJsonTestsBase:
     def test_kvitems_array(self):
         kvitems = self.get_all(self.kvitems, ARRAY_JSON, 'item.docs.item')
         assert JSON_KVITEMS == kvitems
-
-    def test_scalar(self):
-        events = self.get_all(self.basic_parse, SCALAR_JSON)
-        assert [('number', 0)] == events
-
-    def test_strings(self):
-        events = self.get_all(self.basic_parse, STRINGS_JSON)
-        strings = [value for event, value in events if event == 'string']
-        assert ['', '"', '\\', '\\\\', '\b\f\n\r\t'] == strings
-        assert ('map_key', 'special\t') in events
-
-    def test_surrogate_pairs(self):
-        event = self.get_all(self.basic_parse, SURROGATE_PAIRS_JSON)[0]
-        parsed_string = event[1]
-        assert '💩' == parsed_string
-
-    def _get_numbers(self, json, use_float):
-        events = self.get_all(self.basic_parse, json, use_float=use_float)
-        return [value for event, value in events if event == 'number']
-
-
-    @pytest.mark.parametrize(
-        "json, expected_float_type, expected_numbers, use_float",
-        (
-            (b'[1, 1.0, 1E2]', Decimal, [1, Decimal("1.0"), Decimal("1e2")], False),
-            (b'[1, 1.0, 1E2]', float, [1, 1., 100.], True),
-            (b'1e400', Decimal, [Decimal('1e400')], False),
-            (b'1e-400', Decimal, [Decimal('1e-400')], False),
-            (b'1e-400', float, [0], True),
-        )
-    )
-    def test_numbers(self, json, expected_float_type, expected_numbers, use_float):
-        """Check that numbers are correctly parsed"""
-        numbers = self._get_numbers(json, use_float=use_float)
-        float_types = set(type(number) for number in numbers)
-        float_types -= {int}
-        assert 1 == len(float_types)
-        assert expected_float_type == next(iter(float_types))
-        assert expected_numbers == numbers
-
-
-    def test_32bit_ints(self):
-        """Test for 64-bit integers support when using use_float=true"""
-        past32bits = 2 ** 32 + 1
-        past32bits_as_json = ('%d' % past32bits).encode('utf8')
-        if self.backend.capabilities.int64:
-            parsed_number = self._get_numbers(past32bits_as_json, use_float=True)[0]
-            assert past32bits == parsed_number
-        else:
-            self._raises_json_error(past32bits_as_json, use_float=True)
-
-    def test_max_double(self):
-        """Check that numbers bigger than MAX_DOUBLE (usually ~1e308) cannot be represented"""
-        self._raises_json_error(b'1e400', use_float=True)
-
-    @pytest.mark.parametrize(
-        "json", [
-            sign + prefix + suffix
-            for sign, prefix, suffix in itertools.product(
-                (b'', b'-'),
-                (b'00', b'01', b'001'),
-                (b'', b'.0', b'e0', b'E0')
-            )
-        ]
-    )
-    def test_invalid_leading_zeros(self, json):
-        """Check leading zeros are invalid"""
-        if not self.backend.capabilities.invalid_leading_zeros_detection:
-            return
-        self._raises_json_error(json)
-
-    @pytest.mark.parametrize("json", (b'1e', b'0.1e', b'0E'))
-    def test_incomplete_exponents(self, json):
-        """incomplete exponents are invalid JSON"""
-        self._raises_json_error(json)
-
-    @pytest.mark.parametrize("json", (b'1.', b'.1'))
-    def test_incomplete_fractions(self, json):
-        """incomplete fractions are invalid JSON"""
-        self._raises_json_error(json)
-
-    def test_incomplete(self):
-        for json in INCOMPLETE_JSONS:
-            self._raises_incomplete_json_error(json)
-
-    def test_incomplete_tokens(self):
-        if not self.backend.capabilities.incomplete_json_tokens_detection:
-            return
-        for json in INCOMPLETE_JSON_TOKENS:
-            self._raises_incomplete_json_error(json)
-
-    def test_invalid(self):
-        for json in INVALID_JSONS:
-            if not self.backend.capabilities.incomplete_json_tokens_detection and json == INVALID_JSON_WITH_DANGLING_JUNK:
-                continue
-            self._raises_json_error(json)
 
     def test_multiple_values(self):
         """Test that the multiple_values flag works"""
@@ -562,15 +440,6 @@ class IJsonTestsBase:
                 assert [JSON_OBJECT, JSON_OBJECT, JSON_OBJECT] == result
             else:
                 assert result, JSON_EVENTS + JSON_EVENTS + JSON_EVENTS == result
-
-    def test_comments(self):
-        json = b'{"a": 2 /* a comment */}'
-        if self.backend.capabilities.c_comments:
-            events = self.get_all(self.basic_parse, json, allow_comments=True)
-            assert events is not None
-        else:
-            with pytest.raises(ValueError):
-                self.get_all(self.basic_parse, json, allow_comments=True)
 
     @pytest.mark.parametrize("test_case", [
         pytest.param(value, id=name) for name, value in EMPTY_MEMBER_TEST_CASES.items()

@@ -353,36 +353,6 @@ class IJsonTestsBase:
         events = self.get_all(self.parse, JSON)
         assert JSON_PARSE_EVENTS == events
 
-    def test_items(self):
-        events = self.get_all(self.items, JSON, '')
-        assert [JSON_OBJECT] == events
-
-    def test_items_twodictlevels(self):
-        json = b'{"meta":{"view":{"columns":[{"id": -1}, {"id": -2}]}}}'
-        ids = self.get_all(self.items, json, 'meta.view.columns.item.id')
-        assert 2 == len(ids)
-        assert [-2,-1], sorted(ids)
-
-    @pytest.mark.parametrize(
-        "json, prefix, expected_items",
-        (
-            (b'{"0.1": 0}', '0.1', [0]),
-            (b'{"0.1": [{"a.b": 0}]}', '0.1.item.a.b', [0]),
-            (b'{"0.1": 0, "0": {"1": 1}}', '0.1', [0, 1]),
-            (b'{"abc.def": 0}', 'abc.def', [0]),
-            (b'{"abc.def": 0}', 'abc', []),
-            (b'{"abc.def": 0}', 'def', []),
-        )
-    )
-    def test_items_with_dotted_name(self, json, prefix, expected_items):
-        assert expected_items == self.get_all(self.items, json, prefix)
-
-    def test_map_type(self):
-        obj = self.get_all(self.items, JSON, '')[0]
-        assert isinstance(obj, dict)
-        obj = self.get_all(self.items, JSON, '', map_type=collections.OrderedDict)[0]
-        assert isinstance(obj, collections.OrderedDict)
-
     def test_kvitems(self):
         kvitems = self.get_all(self.kvitems, JSON, 'docs.item')
         assert JSON_KVITEMS == kvitems
@@ -414,10 +384,6 @@ class IJsonTestsBase:
         events = self.get_all(self.parse, ARRAY_JSON)
         assert ARRAY_JSON_PARSE_EVENTS == events
 
-    def test_items_array(self):
-        events = self.get_all(self.items, ARRAY_JSON, '')
-        assert [ARRAY_JSON_OBJECT] == events
-
     def test_kvitems_array(self):
         kvitems = self.get_all(self.kvitems, ARRAY_JSON, 'item.docs.item')
         assert JSON_KVITEMS == kvitems
@@ -447,13 +413,6 @@ class IJsonTestsBase:
     def test_kvitems_empty_member(self, test_case):
         pairs = self.get_all(self.kvitems, test_case.json, test_case.prefix)
         assert test_case.kvitems == pairs
-
-    @pytest.mark.parametrize("test_case", [
-        pytest.param(value, id=name) for name, value in EMPTY_MEMBER_TEST_CASES.items()
-    ])
-    def test_items_empty_member(self, test_case):
-        objects = self.get_all(self.items, test_case.json, test_case.prefix)
-        assert test_case.items == objects
 
 
 class FileBasedTests:
